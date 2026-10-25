@@ -29,6 +29,34 @@ The frontend talks only to the lending backend. The lending backend owns the ven
 - Node.js 18+
 - npm 10+
 
+## Check out the GitHub repository
+
+Clone the repository, then change into the cloned project folder:
+
+```powershell
+git clone https://github.com/YOUR_GITHUB_USERNAME/lendingpartnerpoc.git
+Set-Location lendingpartnerpoc
+```
+
+Run each module from its own folder. Open a separate terminal for each service, and start each terminal at the cloned `lendingpartnerpoc` project root before changing into that module's folder. For example:
+
+```powershell
+# Terminal 1: mock vendor
+Set-Location .\mock-vendor
+```
+
+```powershell
+# Terminal 2: lending backend
+Set-Location .\lending-backend
+```
+
+```powershell
+# Terminal 3: frontend
+Set-Location .\frontend
+```
+
+Then run that module's commands in the corresponding terminal. The relative `cd mock-vendor`, `cd lending-backend`, and `cd frontend` commands in this README assume the current directory is the cloned project root. If a terminal is already in the repository root, it does not need to clone or enter the repository again.
+
 ## Project structure
 
 ```text
