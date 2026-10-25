@@ -34,7 +34,7 @@ The frontend talks only to the lending backend. The lending backend owns the ven
 Clone the repository, then change into the cloned project folder:
 
 ```powershell
-git clone https://github.com/YOUR_GITHUB_USERNAME/lendingpartnerpoc.git
+git clone https://github.com/sidkishore2010/lendingpartnerpoc.git
 Set-Location lendingpartnerpoc
 ```
 
