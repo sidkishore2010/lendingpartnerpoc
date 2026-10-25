@@ -1,0 +1,723 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-25T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app",
+  "resources": [
+    {
+      "_id": "wrk_lending_quote_poc",
+      "_type": "workspace",
+      "name": "Lending Commission Quote POC",
+      "description": "Requests to exercise both the lending backend and the separately running mock vendor. See each request description for preconditions.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_lending_quote_base",
+      "_type": "environment",
+      "parentId": "wrk_lending_quote_poc",
+      "name": "Base Environment",
+      "data": {
+        "backend_url": "http://localhost:8080",
+        "vendor_url": "http://localhost:9090",
+        "vendor_api_key": "dev-api-key-123",
+        "lending_api_key": "dev-lending-api-key-123",
+        "correlation_id": "insomnia-poc-check-001"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "backend_url",
+          "vendor_url",
+          "vendor_api_key",
+          "lending_api_key",
+          "correlation_id"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_backend",
+      "_type": "request_group",
+      "parentId": "wrk_lending_quote_poc",
+      "name": "Lending Backend",
+      "description": "POST /api/commission-quotes plus backend health. Normal success scenarios require the backend COMMISSION_FAILURE_RATE=0.0 and mock vendor MOCK_FAILURE_RATE=0.0.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 1000
+    },
+    {
+      "_id": "req_backend_health",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Health check",
+      "description": "Expect HTTP 200 with status UP.",
+      "method": "GET",
+      "url": "{{ _.backend_url }}/actuator/health",
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_success",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Quote - success",
+      "description": "Expected HTTP 200 with quoteId, commissionRate, and totalCommission. For deterministic success, start backend with COMMISSION_FAILURE_RATE=0.0 and mock vendor with MOCK_FAILURE_RATE=0.0.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        },
+        {
+          "name": "X-Correlation-Id",
+          "value": "{{ _.correlation_id }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 2000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_missing_fields",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Validation - missing fields",
+      "description": "Expect HTTP 400 and error code VALIDATION_ERROR.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00\n}"
+      },
+      "metaSortKey": 3000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_zero_amount",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Validation - zero amount",
+      "description": "Expect HTTP 400 and error code VALIDATION_ERROR.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 0,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 4000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_over_max",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Validation - amount over maximum",
+      "description": "Expect HTTP 400. Illustrative maximum is 10,000,000.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 10000001.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 5000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_invalid_term",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Validation - invalid loan term",
+      "description": "Expect HTTP 400 for a term outside 1-360 months.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 361,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 6000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_invalid_band",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Validation - unsupported risk band",
+      "description": "Expect HTTP 400 for a risk band other than A, B, C, or D.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"Z\"\n}"
+      },
+      "metaSortKey": 7000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_malformed",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Request - malformed JSON",
+      "description": "Expect HTTP 400 and error code MALFORMED_JSON.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{ \"loanAmount\": "
+      },
+      "metaSortKey": 8000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_vendor_500",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Vendor failure - simulated HTTP 500",
+      "description": "Precondition: set COMMISSION_FAILURE_RATE=0.0 for a vendor-specific check; set MOCK_FAILURE_RATE=1.0 and delays 0-0, then restart mock vendor. Expected backend HTTP 502 with code VENDOR_SERVER_ERROR. Restore MOCK_FAILURE_RATE=0.0 after this check.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 9000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_timeout",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Vendor timeout",
+      "description": "Precondition: start backend with COMMISSION_FAILURE_RATE=0.0. Start mock vendor with MOCK_FAILURE_RATE=0, MOCK_MIN_DELAY_MS=7000, MOCK_MAX_DELAY_MS=7000, while backend VENDOR_READ_TIMEOUT_MS remains 5000. Expect HTTP 504 and code VENDOR_TIMEOUT. Restore normal settings afterward.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 10000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_unavailable",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Vendor unavailable",
+      "description": "Precondition: start backend with COMMISSION_FAILURE_RATE=0.0, then stop the mock vendor while keeping backend running. Expect HTTP 503 and code VENDOR_UNAVAILABLE. Restart the mock vendor afterward.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 11000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_missing_api_key",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Authentication - missing API key",
+      "description": "No api-key header is sent. Expect HTTP 401 and code API_KEY_INVALID.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 12000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_wrong_api_key",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Authentication - incorrect API key",
+      "description": "Sends a deliberately incorrect lending API key. Expect HTTP 401 and code API_KEY_INVALID.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "incorrect-local-test-key"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 13000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_backend_simulated_failure",
+      "_type": "request",
+      "parentId": "fld_backend",
+      "name": "Failure simulation - lending API HTTP 503",
+      "description": "Precondition: restart lending backend with COMMISSION_FAILURE_RATE=1.0. Expect HTTP 503 with code COMMISSION_QUOTE_TEMPORARY_FAILURE. Restore rate 0.0 afterward.",
+      "method": "POST",
+      "url": "{{ _.backend_url }}/api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.lending_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 14000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "fld_vendor",
+      "_type": "request_group",
+      "parentId": "wrk_lending_quote_poc",
+      "name": "Mock Vendor API",
+      "description": "Direct calls to the vendor endpoint. The vendor is a separate process and requires the configured api-key header.",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 2000
+    },
+    {
+      "_id": "req_vendor_health",
+      "_type": "request",
+      "parentId": "fld_vendor",
+      "name": "Health check",
+      "description": "Expect HTTP 200 with status UP.",
+      "method": "GET",
+      "url": "{{ _.vendor_url }}/actuator/health",
+      "headers": [],
+      "parameters": [],
+      "authentication": {},
+      "metaSortKey": 1000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_vendor_success",
+      "_type": "request",
+      "parentId": "fld_vendor",
+      "name": "Quote - success",
+      "description": "Expected HTTP 200 with a UUID-based quoteId, rate, and total. Use only a local development key; do not store production secrets in an exported collection.",
+      "method": "POST",
+      "url": "{{ _.vendor_url }}/vendor-api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.vendor_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 2000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_vendor_missing_key",
+      "_type": "request",
+      "parentId": "fld_vendor",
+      "name": "Authentication - missing API key",
+      "description": "No api-key header is sent. Expect HTTP 401.",
+      "method": "POST",
+      "url": "{{ _.vendor_url }}/vendor-api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 3000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_vendor_wrong_key",
+      "_type": "request",
+      "parentId": "fld_vendor",
+      "name": "Authentication - incorrect API key",
+      "description": "Sends a deliberately incorrect key. Expect HTTP 401.",
+      "method": "POST",
+      "url": "{{ _.vendor_url }}/vendor-api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "incorrect-local-test-key"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 4000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_vendor_validation",
+      "_type": "request",
+      "parentId": "fld_vendor",
+      "name": "Validation - unsupported risk band",
+      "description": "Sends a valid key and an unsupported risk band. Expect HTTP 400.",
+      "method": "POST",
+      "url": "{{ _.vendor_url }}/vendor-api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.vendor_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"Z\"\n}"
+      },
+      "metaSortKey": 5000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_vendor_random_failure",
+      "_type": "request",
+      "parentId": "fld_vendor",
+      "name": "Failure simulation - random HTTP 500",
+      "description": "Precondition: start mock vendor with MOCK_FAILURE_RATE=1.0 and delay 0-0. Expect HTTP 500. Restore the failure rate to 0.0 after this check.",
+      "method": "POST",
+      "url": "{{ _.vendor_url }}/vendor-api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.vendor_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"loanAmount\": 100000.00,\n  \"loanTermInMonths\": 60,\n  \"riskBand\": \"B\"\n}"
+      },
+      "metaSortKey": 6000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_vendor_malformed",
+      "_type": "request",
+      "parentId": "fld_vendor",
+      "name": "Request - malformed JSON",
+      "description": "Sends malformed JSON with a valid key. Expect HTTP 400.",
+      "method": "POST",
+      "url": "{{ _.vendor_url }}/vendor-api/commission-quotes",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "api-key",
+          "value": "{{ _.vendor_api_key }}"
+        }
+      ],
+      "parameters": [],
+      "authentication": {},
+      "body": {
+        "mimeType": "application/json",
+        "text": "{ \"loanAmount\": "
+      },
+      "metaSortKey": 7000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global"
+    }
+  ]
+}
